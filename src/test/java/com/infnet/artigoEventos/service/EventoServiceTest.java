@@ -114,7 +114,7 @@ class EventoServiceTest {
         List<Evento> eventos = eventoService.getAllEventos();
 
         assertFalse(eventos.isEmpty());
-        assertEquals(1, eventos.size());
+        assertEquals(0, eventos.size());
     }
 
     @Test
