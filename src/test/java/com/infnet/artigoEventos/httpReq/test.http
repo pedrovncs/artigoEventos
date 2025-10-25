@@ -1,0 +1,156 @@
+# Base URL for all requests
+@baseUrl = http://localhost:8080
+
+###
+# ===================================================
+# Usuarios (Users)
+# ===================================================
+
+### 1. Signup a new user
+POST {{baseUrl}}/api/usuarios/signup
+Content-Type: application/json
+
+{
+  "nome": "Test User",
+  "email": "test@example.com",
+  "senha": "password123"
+}
+
+### 2. Login as the user
+# This should work if signup was successful
+POST {{baseUrl}}/api/usuarios/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "senha": "password123"
+}
+
+### 3. Update a user (e.g., user with ID 1)
+PUT {{baseUrl}}/api/usuarios/1
+Content-Type: application/json
+
+{
+  "nome": "Test User Updated",
+  "senha": "newpassword456"
+}
+
+### 4. Delete a user (e.g., user with ID 1)
+DELETE {{baseUrl}}/api/usuarios/1
+
+
+###
+# ===================================================
+# Eventos (Events)
+# ===================================================
+
+### 5. Create a new event (with an image)
+# This uses multipart/form-data.
+# Make sure you have a file in the same directory.
+POST {{baseUrl}}/api/eventos
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="evento"
+Content-Type: application/json
+
+{
+  "nome": "My Big Event",
+  "dataEvento": "2025-12-31T19:00:00",
+  "localEvento": "Main Square",
+  "descricao": "The best event of the year!",
+  "organizadorId": 1
+}
+--boundary
+Content-Disposition: form-data; name="imagem"; filename="sample1.jpg"
+Content-Type: image/jpg
+
+< ./sample1.jpg
+--boundary--
+
+### 6. Create an event (without an image)
+# The image part is optional
+POST {{baseUrl}}/api/eventos
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="evento"
+Content-Type: application/json
+
+{
+  "nome": "Another Event (No Image)",
+  "dataEvento": "2025-11-15T10:00:00",
+  "localEvento": "The Park",
+  "descricao": "A simple get-together.",
+  "organizadorId": 1
+}
+--boundary--
+
+
+### 7. Get all events
+GET {{baseUrl}}/api/eventos
+
+### 8. Get a single event (e.g., event with ID 1)
+GET {{baseUrl}}/api/eventos/1
+
+### 9. Update event details (e.g., event with ID 1)
+# Note: This does NOT update the image.
+PUT {{baseUrl}}/api/eventos/1
+Content-Type: application/json
+
+{
+  "nome": "My Big Event (Updated Name)",
+  "localEvento": "New Location",
+  "status": "CANCELADO"
+}
+
+### 10. Update *only* the image for an event (e.g., event with ID 1)
+PUT {{baseUrl}}/api/eventos/1/imagem
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="imagem"; filename="sample3.jpg"
+Content-Type: image/jpeg
+
+< ./another.jpg
+--boundary--
+
+### 11. Delete an event (e.g., event with ID 2)
+DELETE {{baseUrl}}/api/eventos/2
+
+
+###
+# ===================================================
+# Participantes (Participants)
+# ===================================================
+
+### 12. Add a participant to an event (e.g., event ID 1)
+POST {{baseUrl}}/api/eventos/1/participantes
+Content-Type: application/json
+
+{
+  "nome": "Alice",
+  "email": "alice@participant.com"
+}
+
+### 13. Add another participant to the same event
+POST {{baseUrl}}/api/eventos/1/participantes
+Content-Type: application/json
+
+{
+  "nome": "Bob",
+  "email": "bob@participant.com"
+}
+
+### 14. Try to add the same participant (should fail)
+POST {{baseUrl}}/api/eventos/1/participantes
+Content-Type: application/json
+
+{
+  "nome": "Alice",
+  "email": "alice@participant.com"
+}
+
+### 15. Remove a participant from an event (e.g., remove participant 1 from event 1)
+# Assumes the first participant created has ID 1
+DELETE {{baseUrl}}/api/eventos/1/participantes/1
