@@ -49,6 +49,17 @@ jobs:
           update-comment: true
           title: 'Jacoco Code Coverage Report'
 
+      - name: Close PR if coverage below threshold
+        if: failure() && github.event_name == 'pull_request'
+        uses: peter-evans/close-pull@v3.0.1
+        with:
+          pull-request-number: ${{ github.event.pull_request.number }}
+          comment: |
+            ❌ Cobertura de código abaixo de **80%**.
+            PR fechado automaticamente.
+            Adicione novos testes e reabra quando finalizado.
+
+
       - name: Upload Jacoco Report
         if: always()
         uses: actions/upload-artifact@v4
