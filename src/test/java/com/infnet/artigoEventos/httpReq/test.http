@@ -1,9 +1,10 @@
-# Base URL and Auth Credentials
 @baseUrl = http://localhost:8080
 @email1 = usuario1@email.com
 @email2 = usuario2@email.com
-@password = senha123
-@password2 = senha321
+#CRIA UMA SENHA AQUI,MAS NAO ENVIA ELA NO COMMIT PRA NAO FICAR DANDO ALERT NO GITGUARDIAN
+#@password =
+#CRIA UMA SENHA AQUI, MAS NAO ENVIA ELA NO COMMIT PRA NAO FICAR DANDO ALERT NO GITGUARDIAN
+#@password2 =
 
 #---------------------------------------------------------------
 # swagger docs
