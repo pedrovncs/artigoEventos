@@ -116,7 +116,7 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
-                <configuration>
+                <!--<configuration>
                     <excludes>
                         <exclude>com/infnet/artigoEventos/config/*</exclude>
                         <exclude>com/infnet/artigoEventos/model/*</exclude>
@@ -124,7 +124,7 @@
                         <exclude>com/infnet/artigoEventos/ArtigoEventosApplication.class</exclude>
                         <exclude>com/infnet/artigoEventos/repository/*</exclude>
                     </excludes>
-                </configuration>
+                </configuration>-->
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
