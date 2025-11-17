@@ -1,4 +1,4 @@
-name: Java CI with Maven
+name: ci-pr-check
 
 on:
   workflow_dispatch:
@@ -58,7 +58,6 @@ jobs:
             ❌ Cobertura de código abaixo de **80%**.
             PR fechado automaticamente.
             Adicione novos testes e reabra quando finalizado.
-
 
       - name: Upload Jacoco Report
         if: always()
