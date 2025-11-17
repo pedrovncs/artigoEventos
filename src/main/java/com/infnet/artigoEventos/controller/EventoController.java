@@ -18,7 +18,7 @@ import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 import java.util.List;
-//ab
+
 @RestController
 @RequestMapping("/api/eventos")
 @CrossOrigin(origins = "*")
