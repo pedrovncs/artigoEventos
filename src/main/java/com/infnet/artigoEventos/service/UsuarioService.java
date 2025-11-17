@@ -9,32 +9,39 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import java.util.ArrayList;
 
 @Service
-public class UsuarioService {
+public class UsuarioService implements UserDetailsService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public Usuario signup(UsuarioDto dto) {
-        if (usuarioRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email já em uso");
+    public Usuario signup(UsuarioDto usuarioDto) {
+        if (usuarioRepository.findByEmail(usuarioDto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email ja cadastrado");
         }
-        Usuario usuario = new Usuario();
-        usuario.setNome(dto.getNome());
-        usuario.setEmail(dto.getEmail());
-        usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
 
-        return usuarioRepository.save(usuario);
+        Usuario novoUsuario = new Usuario();
+        novoUsuario.setNome(usuarioDto.getNome());
+        novoUsuario.setEmail(usuarioDto.getEmail());
+        novoUsuario.setSenha(passwordEncoder.encode(usuarioDto.getSenha()));
+
+        return usuarioRepository.save(novoUsuario);
     }
 
-    public Usuario login(LoginDto dto) {
-        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new EntityNotFoundException("Usuiario nao foi ecnontrado com email: " + dto.getEmail()));
-        if (!passwordEncoder.matches(dto.getSenha(), usuario.getSenha())) {
-            throw new IllegalArgumentException("Senha inválida");
+    public Usuario login(LoginDto loginDto) {
+        Usuario usuario = usuarioRepository.findByEmail(loginDto.getEmail())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario nao encontrado"));
+
+        if (!passwordEncoder.matches(loginDto.getSenha(), usuario.getSenha())) {
+            throw new IllegalArgumentException("Senha invalida");
         }
         return usuario;
     }
@@ -43,12 +50,14 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario nao encontrado com id: " + id));
 
-        if (dto.getNome() != null && !dto.getNome().isBlank()) {
+        if (dto.getNome() != null) {
             usuario.setNome(dto.getNome());
         }
-        if (dto.getSenha() != null && !dto.getSenha().isBlank()) {
+
+        if (dto.getSenha() != null && !dto.getSenha().isEmpty()) {
             usuario.setSenha(passwordEncoder.encode(dto.getSenha()));
         }
+
         return usuarioRepository.save(usuario);
     }
 
@@ -57,5 +66,17 @@ public class UsuarioService {
             throw new EntityNotFoundException("Usuario nao encontrado com id: " + id);
         }
         usuarioRepository.deleteById(id);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + email));
+
+        return new org.springframework.security.core.userdetails.User(
+                usuario.getEmail(),
+                usuario.getSenha(),
+                new ArrayList<>()
+        );
     }
 }

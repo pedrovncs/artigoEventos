@@ -1,53 +1,97 @@
-# Base URL for all requests
+# Base URL and Auth Credentials
 @baseUrl = http://localhost:8080
+@email1 = usuario1@email.com
+@email2 = usuario2@email.com
+@password = senha123
+@password2 = senha321
+
+#---------------------------------------------------------------
+# swagger docs
+
+### arquivo json
+GET{{baseUrl}}/api/v3/api-docs
+Content-Type: application/json
+
+### pagina html
+GET{{baseUrl}}/api/swagger-ui/index.html
+Content-Type: application/json
+
+#---------------------------------------------------------------
+### /teste (endpoint publico / healthcheck)
+
+GET{{baseUrl}}/api/teste
+Content-Type: application/json
 
 ###
-# ===================================================
-# Usuarios (Users)
-# ===================================================
 
-### 1. Signup a new user
+#---------------------------------------------------------------
+# /usuarios (endpoints publicos)
+
+### cadastrar usuario1
 POST {{baseUrl}}/api/usuarios/signup
 Content-Type: application/json
 
 {
-  "nome": "Test User",
-  "email": "test@example.com",
-  "senha": "password123"
+  "nome": "Nicholas Wrong",
+  "email": "{{email1}}",
+  "senha": "{{password}}"
 }
 
-### 2. Login as the user
-# This should work if signup was successful
+### cadastrar usuario2
+POST {{baseUrl}}/api/usuarios/signup
+Content-Type: application/json
+
+{
+  "nome": "Barack Obama",
+  "email": "{{email2}}",
+  "senha": "{{password}}"
+}
+
+### testar login usuario1 apos cadastro
 POST {{baseUrl}}/api/usuarios/login
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "senha": "password123"
+  "email": "{{email1}}",
+  "senha": "{{password}}"
 }
 
-### 3. Update a user (e.g., user with ID 1)
-PUT {{baseUrl}}/api/usuarios/1
+### testar login usuario2 apos cadastro
+POST {{baseUrl}}/api/usuarios/login
 Content-Type: application/json
 
 {
-  "nome": "Test User Updated",
-  "senha": "newpassword456"
+  "email": "{{email2}}",
+  "senha": "{{password}}"
 }
-
-### 4. Delete a user (e.g., user with ID 1)
-DELETE {{baseUrl}}/api/usuarios/1
-
 
 ###
-# ===================================================
-# Eventos (Events)
-# ===================================================
 
-### 5. Create a new event (with an image)
-# This uses multipart/form-data.
-# Make sure you have a file in the same directory.
+#---------------------------------------------------------------
+# /usuarios (endpoints protegidos)
+
+### atualizar usuario existente
+PUT {{baseUrl}}/api/usuarios/3
+Authorization: Basic {{email1}} {{password}}
+Content-Type: application/json
+
+{
+  "nome": "Nicholas Wright",
+  "senha": "{{password2}}"
+}
+
+### deletar usuario existente
+DELETE {{baseUrl}}/api/usuarios/3
+Authorization: Basic {{email1}} {{password2}}
+
+###
+
+#---------------------------------------------------------------
+# eventos (endpoints protegidos)
+
+### criar um novo evento com imagem
 POST {{baseUrl}}/api/eventos
+Authorization: Basic {{email2}} {{password}}
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
@@ -55,21 +99,36 @@ Content-Disposition: form-data; name="evento"
 Content-Type: application/json
 
 {
-  "nome": "My Big Event",
-  "dataEvento": "2025-12-31T19:00:00",
-  "localEvento": "Main Square",
-  "descricao": "The best event of the year!",
-  "organizadorId": 1
+  "nome": "RAMADAN (COM IMAGEM)",
+  "dataEvento": "2026-02-17T00:00:00",
+  "localEvento": "Mecca, Saudi Arabia",
+  "descricao": "the Holy Qur'an was sent down from heaven "
 }
 --boundary
-Content-Disposition: form-data; name="imagem"; filename="sample1.jpg"
+Content-Disposition: form-data; name="imagem"; filename="sample1.png"
 Content-Type: image/jpg
 
-< ./sample1.jpg
+< ./sample1.png
+--boundary-
+
+### criar novo evento sem imagem
+POST {{baseUrl}}/api/eventos
+Authorization: Basic {{email2}} {{password}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="evento"  <-- CORRIJA ESTA LINHA
+Content-Type: application/json
+
+{
+  "nome": "Roberto Carlos Especial (SEM IMAGEM)",
+  "dataEvento": "2025-12-22T22:00:00",
+  "localEvento": "Cruzeiro em Alto Mar",
+  "descricao": "a jovem guarda era um programa de televisao."
+}
 --boundary--
 
-### 6. Create an event (without an image)
-# The image part is optional
+### falha ao criar evento sem login senha
 POST {{baseUrl}}/api/eventos
 Content-Type: multipart/form-data; boundary=boundary
 
@@ -78,79 +137,84 @@ Content-Disposition: form-data; name="evento"
 Content-Type: application/json
 
 {
-  "nome": "Another Event (No Image)",
-  "dataEvento": "2025-11-15T10:00:00",
-  "localEvento": "The Park",
-  "descricao": "A simple get-together.",
-  "organizadorId": 1
+  "nome": "vai falhar",
+  "dataEvento": "2033-12-10T10:00:00",
+  "localEvento": "nada",
+  "descricao": "deus esta morto"
 }
---boundary--
 
-
-### 7. Get all events
-GET {{baseUrl}}/api/eventos
-
-### 8. Get a single event (e.g., event with ID 1)
-GET {{baseUrl}}/api/eventos/1
-
-### 9. Update event details (e.g., event with ID 1)
-# Note: This does NOT update the image.
+### atualizar evento cadastrado
 PUT {{baseUrl}}/api/eventos/1
+Authorization: Basic {{email2}} {{password}}
 Content-Type: application/json
 
 {
-  "nome": "My Big Event (Updated Name)",
-  "localEvento": "New Location",
+  "nome": "RAMADÃ",
   "status": "CANCELADO"
 }
 
-### 10. Update *only* the image for an event (e.g., event with ID 1)
-PUT {{baseUrl}}/api/eventos/1/imagem
+### atualizar imagem de um evento cadastrado
+PUT {{baseUrl}}/api/eventos/4/imagem
+Authorization: Basic {{email2}} {{password}}
 Content-Type: multipart/form-data; boundary=boundary
 
 --boundary
-Content-Disposition: form-data; name="imagem"; filename="sample3.jpg"
-Content-Type: image/jpeg
+Content-Disposition: form-data; name="imagem"; filename="sample3.png"
+Content-Type: image/png
 
-< ./another.jpg
+< ./sample3.png
 --boundary--
 
-### 11. Delete an event (e.g., event with ID 2)
-DELETE {{baseUrl}}/api/eventos/2
-
+### deletar evento
+DELETE {{baseUrl}}/api/eventos/4
+Authorization: Basic {{email2}} {{password}}
 
 ###
-# ===================================================
-# Participantes (Participants)
-# ===================================================
 
-### 12. Add a participant to an event (e.g., event ID 1)
-POST {{baseUrl}}/api/eventos/1/participantes
+#---------------------------------------------------------------
+# eventos (endpoints publicos)
+
+### buscar todos os eventos cadastrados
+GET {{baseUrl}}/api/eventos
+
+### buscar um evento unico
+GET {{baseUrl}}/api/eventos/4
+
+
+#---------------------------------------------------------------
+# participantes (endpoints publicos)
+
+### adicionar participante ao evento
+POST {{baseUrl}}/api/eventos/5/participantes
+Authorization: Basic {{email2}} {{password}}
 Content-Type: application/json
 
 {
-  "nome": "Alice",
-  "email": "alice@participant.com"
+  "nome": "LP",
+  "email": "lpmaia13@gmail.com"
 }
 
-### 13. Add another participant to the same event
-POST {{baseUrl}}/api/eventos/1/participantes
+### adicionar participante ao evento
+POST {{baseUrl}}/api/eventos/5/participantes
+Authorization: Basic {{email2}} {{password}}
 Content-Type: application/json
 
 {
-  "nome": "Bob",
-  "email": "bob@participant.com"
+  "nome": "Nicolás Maduro",
+  "email": "nicomad@venezualar.gov.br"
 }
 
-### 14. Try to add the same participant (should fail)
-POST {{baseUrl}}/api/eventos/1/participantes
+### tentar adicionar o mesmo partcipante
+POST {{baseUrl}}/api/eventos/5/participantes
+Authorization: Basic {{email2}} {{password}}
 Content-Type: application/json
 
 {
-  "nome": "Alice",
-  "email": "alice@participant.com"
+  "nome": "Nicolás Maduro",
+  "email": "nicomad@venezualar.gov.br"
 }
 
-### 15. Remove a participant from an event (e.g., remove participant 1 from event 1)
-# Assumes the first participant created has ID 1
-DELETE {{baseUrl}}/api/eventos/1/participantes/1
+### remover participante
+DELETE {{baseUrl}}/api/eventos/5/participantes/3
+Authorization: Basic {{email2}} {{password}}
+
