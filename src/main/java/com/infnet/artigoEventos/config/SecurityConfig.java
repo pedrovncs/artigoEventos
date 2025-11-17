@@ -24,9 +24,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/usuarios/signup").permitAll()
-                        .requestMatchers("/api/usuarios/login").permitAll()
-                        .requestMatchers("/api/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v3/api-docs").permitAll()
+                        .requestMatchers("/api/swagger-ui/**").permitAll()
+                        .requestMatchers("/api/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/teste").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/eventos").permitAll()
