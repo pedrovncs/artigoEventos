@@ -38,7 +38,8 @@ public class EventoService {
     public EventoService(@Value("${file.upload-dir}") String uploadDir) {
         this.rootLocation = Paths.get(uploadDir);
     }
-
+ //
+    //
     @PostConstruct
     public void init() {
         try {

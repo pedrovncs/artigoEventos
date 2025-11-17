@@ -10,4 +10,8 @@ class ArtigoEventosApplicationTests {
 	void contextLoads() {
 	}
 
+    @Test
+    void contextLoads2() {
+    }
+
 }

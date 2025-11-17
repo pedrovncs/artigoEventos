@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build, Test, and Generate Reports
-        run: mvn -B clean verify
+        run: mvn -B -q clean verify
 
       - name: JaCoCo Report to PR
         if: github.event_name == 'pull_request'
@@ -45,19 +45,17 @@ jobs:
         with:
           paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 80
+          min-coverage-changed-files: 40
+          min-coverage-overall: 60
           update-comment: true
-          title: 'Jacoco Code Coverage Report'
+          title: '🍌Cobertura Jacoco nos arquivos modificados no PR'
 
-      #- name: Close PR if coverage below threshold
-        #if: failure() && github.event_name == 'pull_request'
-        #uses: peter-evans/close-pull@v3.0.1
-        #with:
-          #pull-request-number: ${{ github.event.pull_request.number }}
-          #comment: |
-            #❌ Cobertura de código abaixo de **80%**.
-            #PR fechado automaticamente.
-            #Adicione novos testes e reabra quando finalizado.
+      - name: Fail PR if overall coverage is less than 80%
+        if: ${{ steps.jacoco.outputs.coverage-overall < 80.0 }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Overall coverage is less than 80%!')
 
       - name: Upload Jacoco Report
         if: always()
