@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import java.io.IOException;
 import java.util.List;
@@ -43,9 +44,12 @@ public class EventoController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createEvento(
             @Valid @RequestPart("evento") EventoCreateDto eventoDto,
-            @RequestPart(value = "imagem", required = false) MultipartFile imagem) {
+            @RequestPart(value = "imagem", required = false) MultipartFile imagem,
+            Authentication authentication) {
         try {
-            Evento novoEvento = eventoService.createEvento(eventoDto, imagem);
+            String organizadorEmail = authentication.getName();
+
+            Evento novoEvento = eventoService.createEvento(eventoDto, imagem, organizadorEmail);
             return ResponseEntity.status(201).body(novoEvento);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -92,13 +96,15 @@ public class EventoController {
     @PostMapping("/{id}/participantes")
     public ResponseEntity<?> addParticipante(
             @PathVariable("id") Integer eventoId,
-            @Valid @RequestBody ParticipanteDto participanteDto) {
+            @Valid @RequestBody ParticipanteDto participanteDto,
+            Authentication authentication) {
         try {
-            Participante novoParticipante = eventoService.addParticipante(eventoId, participanteDto);
+            String requisitanteEmail = authentication.getName();
+            Participante novoParticipante = eventoService.addParticipante(eventoId, participanteDto, requisitanteEmail);
             return ResponseEntity.status(201).body(novoParticipante);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | SecurityException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -106,13 +112,18 @@ public class EventoController {
     @DeleteMapping("/{id}/participantes/{participanteId}")
     public ResponseEntity<?> removeParticipante(
             @PathVariable("id") Integer eventoId,
-            @PathVariable("participanteId") Integer participanteId) {
+            @PathVariable("participanteId") Integer participanteId,
+            Authentication authentication) {
         try {
-            eventoService.removeParticipante(eventoId, participanteId);
+            String requisitanteEmail = authentication.getName();
+
+            eventoService.removeParticipante(eventoId, participanteId, requisitanteEmail);
+
             return ResponseEntity.noContent().build();
+
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | SecurityException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

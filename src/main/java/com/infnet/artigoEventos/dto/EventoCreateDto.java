@@ -19,7 +19,4 @@ public class EventoCreateDto {
     private String localEvento;
 
     private String descricao;
-
-    @NotNull(message = "O ID do organizador é obrigatório")
-    private Integer organizadorId;
 }
