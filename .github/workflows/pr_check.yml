@@ -47,7 +47,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 80
           update-comment: true
-          title: 'Jacoco Code Coverage Report'
+          title: '🍌Cobertura Jacoco nos arquivos modificados no PR'
 
       - name: Upload Jacoco Report
         if: always()
