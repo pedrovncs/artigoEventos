@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @CrossOrigin(origins = "*")
 public class ApiController {
-//
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 

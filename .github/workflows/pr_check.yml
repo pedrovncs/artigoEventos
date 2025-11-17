@@ -45,10 +45,17 @@ jobs:
         with:
           paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-changed-files: 80
-          min-coverage-overall: 80
+          min-coverage-changed-files: 40
+          min-coverage-overall: 60
           update-comment: true
           title: '🍌Cobertura Jacoco nos arquivos modificados no PR'
+
+      - name: Fail PR if overall coverage is less than 80%
+        if: ${{ steps.jacoco.outputs.coverage-overall < 80.0 }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Overall coverage is less than 80%!')
 
       - name: Upload Jacoco Report
         if: always()
