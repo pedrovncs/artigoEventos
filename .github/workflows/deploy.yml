@@ -5,6 +5,14 @@ on:
     - cron: '0 0 * * 0'
   workflow_dispatch:
 
+    #REMOVER ANTES DO MERGE
+
+  pull_request:
+      branches: [ "main" ]
+  push:
+      branches: [ "feature/deploy-config" ]
+
+
 jobs:
   build-and-push:
     runs-on: ubuntu-22.04
