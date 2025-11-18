@@ -2,24 +2,16 @@ name: deploy
 
 on:
   schedule:
-    [
-      cron: '33 3 * * 1-5',
-    ]
+    - cron: '33 3 * * 1-5'
   workflow_dispatch:
-
-    #REMOVER ANTES DO MERGE
-
   pull_request:
-      branches: [ "main" ]
+    branches: [ "main" ]
   push:
-      branches: [ "feature/deploy-config" ]
-
-permissions:
-  contents: write
+    branches: [ "feature/deploy-config" ]
 
 jobs:
 
-  build-and-push:
+  build-push:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -37,38 +29,9 @@ jobs:
       - name: permissão para executar mvn
         run: chmod +x mvnw
 
-      - name: calcular versão
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          dry_run: true
-
-      - name: atualizar pom.xml
-        if: ${{ steps.tag_version.outputs.new_tag }}
-        run: ./mvnw versions:set -DnewVersion=${{ steps.tag_version.outputs.new_tag }} -DgenerateBackupPoms=false
-
-      - name: commit da nova versão
-        if: ${{ steps.tag_version.outputs.new_tag }}
-        uses: stefanzweifel/git-auto-commit-action@v7.0.0
-        with:
-          commit_message: "chore: versão alterada - ${{ steps.tag_version.outputs.new_tag }}"
-          file_pattern: 'pom.xml'
-          tagging_message: ${{ steps.tag_version.outputs.new_tag }}
-
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
 
-      - name: criar release no github
-        if: ${{ steps.tag_version.outputs.new_tag }}
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
-          files: target/*.jar
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: login no docker hub
         uses: docker/login-action@v3
         with:
@@ -82,10 +45,10 @@ jobs:
           push: true
           tags: | 
             ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{ steps.tag_version.outputs.new_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{github.sha}}
 
   deploy:
-    needs: build-and-push
+    needs: build-push
     runs-on: ubuntu-latest
     steps:
       - name: deploy na VM via SSH
@@ -98,6 +61,7 @@ jobs:
             docker stop artigo-eventos || true
             docker rm artigo-eventos || true
             
+            # Forces the download of the new 'latest' image
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
             
             docker run -d \
@@ -107,5 +71,3 @@ jobs:
               -e SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/eventos.db \
               -e FILE_UPLOAD_DIR=/app/data/uploads \
               ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
-
-
