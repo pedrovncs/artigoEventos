@@ -3,8 +3,7 @@ name: deploy
 on:
   schedule:
     [
-      cron: '0 0 * * 0',
-      cron: '0 0 * * 4'
+      cron: '33 3 * * 1-5',
     ]
   workflow_dispatch:
 
@@ -19,6 +18,7 @@ permissions:
   contents: write
 
 jobs:
+
   build-and-push:
     runs-on: ubuntu-22.04
     steps:
@@ -34,7 +34,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: permissao de executar mvn
+      - name: permissão para executar mvn
         run: chmod +x mvnw
 
       - name: calcular versão
@@ -45,9 +45,11 @@ jobs:
           dry_run: true
 
       - name: atualizar pom.xml
+        if: ${{ steps.tag_version.outputs.new_tag }}
         run: ./mvnw versions:set -DnewVersion=${{ steps.tag_version.outputs.new_tag }} -DgenerateBackupPoms=false
 
       - name: commit da nova versão
+        if: ${{ steps.tag_version.outputs.new_tag }}
         uses: stefanzweifel/git-auto-commit-action@v7.0.0
         with:
           commit_message: "chore: versão alterada - ${{ steps.tag_version.outputs.new_tag }}"
@@ -57,6 +59,16 @@ jobs:
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
 
+      - name: criar release no github
+        if: ${{ steps.tag_version.outputs.new_tag }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+          files: target/*.jar
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: login no docker hub
         uses: docker/login-action@v3
         with:
@@ -76,7 +88,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Oracle VM via SSH
+      - name: deploy na VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
@@ -95,3 +107,5 @@ jobs:
               -e SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/eventos.db \
               -e FILE_UPLOAD_DIR=/app/data/uploads \
               ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
+
+

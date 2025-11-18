@@ -36,7 +36,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build, Test, and Generate Reports
+      - name: Build, Test e Jacoco Report
         run: mvn -B -q clean verify
 
       - name: JaCoCo Report to PR
@@ -50,12 +50,12 @@ jobs:
           update-comment: true
           title: '🍌Cobertura Jacoco nos arquivos modificados no PR'
 
-      - name: Fail PR if overall coverage is less than 80%
+      - name: falha PR se cobertura estiver abaixo 80%
         if: ${{ steps.jacoco.outputs.coverage-overall < 80.0 && github.event_name == 'pull_request'}}
         uses: actions/github-script@v6
         with:
           script: |
-            core.setFailed('Overall coverage is less than 80%!')
+            core.setFailed('Cobertura de testes total abaixo de 80%!')
 
       - name: Upload Jacoco Report
         if: always()
