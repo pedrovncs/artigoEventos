@@ -12,6 +12,8 @@ on:
   push:
       branches: [ "feature/deploy-config" ]
 
+permissions:
+  contents: write
 
 jobs:
   build-and-push:
@@ -19,6 +21,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -27,21 +31,40 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: calcular versão
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+
+      - name: Update pom.xml to New Version
+        run: ./mvnw versions:set -DnewVersion=${{ steps.tag_version.outputs.new_tag }} -DgenerateBackupPoms=false
+
+      - name: commit da nova versão
+        uses: stefanzweifel/git-auto-commit-action@v7.0.0
+        with:
+          commit_message: "chore: versão alterada - ${{ steps.tag_version.outputs.new_tag }}"
+          file_pattern: 'pom.xml'
+          tagging_message: ${{ steps.tag_version.outputs.new_tag }}
+
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Login to Docker Hub
+      - name: login no docker hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: build e push da docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
+          tags: | 
+            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{ steps.tag_version.outputs.new_tag }}
 
   deploy:
     needs: build-and-push
