@@ -129,6 +129,7 @@ jobs:
         with:
           args: |
             **📢 Workflow de deploy acabou de rodar**
+            **Branch: ** `${{github.ref}}`
             
             **📦 versão:** `${{ needs.build-push.outputs.version || 'N/A' }}`
             jobs:
