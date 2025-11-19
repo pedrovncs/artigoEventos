@@ -185,3 +185,8 @@ class UsuarioControllerTest {
                 .andExpect(content().string("Usuário não encontrado"));
     }
 }
+import static org.junit.jupiter.api.Assertions.*;
+
+class UsuarioControllerTest {
+
+}

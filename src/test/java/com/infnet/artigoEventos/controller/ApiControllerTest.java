@@ -67,3 +67,8 @@ class ApiControllerTest {
                 .andExpect(status().isNotFound());
     }
 }
+import static org.junit.jupiter.api.Assertions.*;
+
+class ApiControllerTest {
+
+}
