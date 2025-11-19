@@ -62,13 +62,14 @@ graph TD
     E --> F[build maven .jar]
     F --> G[cria tag git e release]
     F --> H[build e push docker image]
-    
+
     H --> I{deploy job}
     I --> J[SSH oracle cloud vm]
     J --> K[docker pull latest]
     K --> L[reinicia container]
-    
-    L --> M[notify job]
+
+    L --> M{notify job}
+    M -->N[construir e enviar msg]
 ``` 
 
 #### Destaques da Automação:
