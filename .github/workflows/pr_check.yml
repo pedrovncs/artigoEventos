@@ -42,6 +42,7 @@ jobs:
           ./mvnw -B -q clean verify
 
       - name: JaCoCo Report to PR
+        id: jacoco
         if: github.event_name == 'pull_request'
         uses: madrapps/jacoco-report@v1.7.2
         with:
