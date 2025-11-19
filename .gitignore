@@ -35,4 +35,4 @@ build/
 
 *.db
 uploads
-
+src/main/resources/static/deploy.html
