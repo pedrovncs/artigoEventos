@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -113,3 +115,26 @@ jobs:
               -e SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/eventos.db \
               -e FILE_UPLOAD_DIR=/app/data/uploads \
               ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
+
+  notify:
+    name: notificar discord
+    runs-on: ubuntu-latest
+    needs: [ build-push-release, deploy ]
+    if: always()
+    steps:
+      - name: enviar mensagem
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            **📢 Workflow de deploy acabou de rodar**
+            branch: `${{github.ref}}`
+            
+            **📦 versão:** `${{ needs.build-push.outputs.version || 'N/A' }}`
+            
+            jobs:
+            **➡️ build-push-release:** ${{ needs.build-push-release.result }}
+            **➡️ deploy:** ${{ needs.deploy.result }}
+            
+            🔗 [verificar execução](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
