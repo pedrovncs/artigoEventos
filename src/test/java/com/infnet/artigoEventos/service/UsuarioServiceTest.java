@@ -127,8 +127,4 @@ class UsuarioServiceTest {
             usuarioService.loadUserByUsername("naoExiste@test.com");
         });
     }
-import static org.junit.jupiter.api.Assertions.*;
-
-class UsuarioServiceTest {
-
 }

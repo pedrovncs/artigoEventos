@@ -354,8 +354,4 @@ class EventoControllerTest {
                 .andExpect(content().string("Participante não pertence ao evento"));
     }
 }
-import static org.junit.jupiter.api.Assertions.*;
 
-class EventoControllerTest {
-
-}
