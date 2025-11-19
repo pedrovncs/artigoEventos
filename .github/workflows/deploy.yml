@@ -61,13 +61,13 @@ jobs:
         run: ./mvnw clean package -DskipTests
 
       - name: criar tag
-        if: github.ref == 'refs/heads/main'
+        #if: github.ref == 'refs/heads/main'
         run: |
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
 
       - name: criar release no github
-        if: github.ref == 'refs/heads/main'
+        #if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2.4.2
         with:
           tag_name: v${{ steps.version.outputs.version }}
