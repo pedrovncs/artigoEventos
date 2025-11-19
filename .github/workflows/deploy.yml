@@ -4,10 +4,6 @@ on:
   schedule:
     - cron: '33 3 * * 1-5'
   workflow_dispatch:
-  pull_request:
-    branches: [ "main" ]
-  push:
-    branches: [ "feature/deploy-config" ]
 
 jobs:
 
