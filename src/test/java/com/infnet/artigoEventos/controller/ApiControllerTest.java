@@ -31,7 +31,7 @@ class ApiControllerTest {
 
         when(jdbcTemplate.queryForObject("SELECT 1", Integer.class)).thenReturn(1);
 
-        mockMvc.perform(get("/api/teste"))
+        mockMvc.perform(get("/api/teste/healthcheck"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("OK rodando... :D"))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN));
@@ -45,7 +45,7 @@ class ApiControllerTest {
         doThrow(new RuntimeException("Erro DB"))
                 .when(jdbcTemplate).queryForObject("SELECT 1", Integer.class);
 
-        mockMvc.perform(get("/api/teste"))
+        mockMvc.perform(get("/api/teste/healthcheck"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(content().string("api indisponível... falha no banco de dados xP"))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN));
