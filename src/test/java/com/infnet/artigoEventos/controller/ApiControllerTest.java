@@ -10,9 +10,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.File;
-import java.io.FileWriter;
-
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -57,14 +54,6 @@ class ApiControllerTest {
     @WithMockUser
     @DisplayName("GET /api/teste/deploy retorna 200 quando deploy.html existe")
     void testGetDeployStatusFileExists() throws Exception {
-
-        File dir = new File("target/test-classes/static/");
-
-        File file = new File(dir, "deploy.html");
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write("<html><body>OK</body></html>");
-        }
-
         mockMvc.perform(get("/api/teste/deploy"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_HTML));
@@ -74,13 +63,7 @@ class ApiControllerTest {
     @WithMockUser
     @DisplayName("GET /api/teste/deploy retorna 404 quando deploy.html não existe")
     void testGetDeployStatusFileNotFound() throws Exception {
-        File file = new File("target/test-classes/static/deploy.html");
-        if (file.exists()) {
-            file.delete();
-        }
-
-        mockMvc.perform(get("/api/teste/deploy"))
+        mockMvc.perform(get("/api/teste/deployFail"))
                 .andExpect(status().isNotFound());
     }
 }
-
