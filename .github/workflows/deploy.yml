@@ -105,7 +105,6 @@ jobs:
             docker stop artigo-eventos || true
             docker rm artigo-eventos || true
             
-            # Forces the download of the new 'latest' image
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
             
             docker run -d \
