@@ -34,4 +34,5 @@ build/
 
 *.db
 uploads
+uploads-test
 src/main/resources/static/deploy.html
