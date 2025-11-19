@@ -37,7 +37,9 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build, Test e Jacoco Report
-        run: ./mvnw -B -q clean verify
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -q clean verify
 
       - name: JaCoCo Report to PR
         if: github.event_name == 'pull_request'
