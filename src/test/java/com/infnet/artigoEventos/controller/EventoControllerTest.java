@@ -20,6 +20,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -236,5 +237,120 @@ class EventoControllerTest {
         mockMvc.perform(delete("/api/eventos/3/participantes/20")
                         .with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PUT /api/eventos/{id}/imagem - evento não encontrado")
+    void testUpdateEventoImagem_NotFound() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "imagem", "foto.png", "image/png", "img".getBytes()
+        );
+
+        Mockito.when(eventoService.updateEventoImagem(eq(99), any()))
+                .thenThrow(new EntityNotFoundException("Imagem não encontrada"));
+
+        mockMvc.perform(multipart("/api/eventos/99/imagem")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Imagem não encontrada"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PUT /api/eventos/{id}/imagem - erro ao processar imagem")
+    void testUpdateEventoImagem_IOException() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "imagem", "foto.png", "image/png", "img".getBytes()
+        );
+
+        Mockito.when(eventoService.updateEventoImagem(eq(1), any()))
+                .thenThrow(new IOException("Erro ao salvar imagem"));
+
+        mockMvc.perform(multipart("/api/eventos/1/imagem")
+                        .file(file)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Erro processando a imagem"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("DELETE /api/eventos/{id} - evento não encontrado")
+    void testDeleteEvento_NotFound() throws Exception {
+        Mockito.doThrow(new EntityNotFoundException("Evento não existe"))
+                .when(eventoService).deleteEvento(99);
+
+        mockMvc.perform(delete("/api/eventos/99")
+                        .with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Evento não existe"));
+    }
+
+    @Test
+    @WithMockUser(username = "organizador@test.com", roles = {"USER"})
+    @DisplayName("POST /api/eventos/{id}/participantes - evento não encontrado")
+    void testAddParticipante_EventoNotFound() throws Exception {
+        ParticipanteDto dto = new ParticipanteDto();
+        dto.setNome("João");
+        dto.setEmail("joao@test.com");
+
+        Mockito.when(eventoService.addParticipante(eq(20), any(), eq("organizador@test.com")))
+                .thenThrow(new EntityNotFoundException("Evento não encontrado"));
+
+        mockMvc.perform(post("/api/eventos/20/participantes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Evento não encontrado"));
+    }
+
+    @Test
+    @WithMockUser(username = "organizador@test.com", roles = {"USER"})
+    @DisplayName("POST /api/eventos/{id}/participantes - erro de regra de negócio")
+    void testAddParticipante_BadRequest() throws Exception {
+        ParticipanteDto dto = new ParticipanteDto();
+        dto.setNome("João");
+        dto.setEmail("joao@test.com");
+
+        Mockito.when(eventoService.addParticipante(eq(10), any(), eq("organizador@test.com")))
+                .thenThrow(new IllegalArgumentException("Participante já inscrito"));
+
+        mockMvc.perform(post("/api/eventos/10/participantes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Participante já inscrito"));
+    }
+
+    @Test
+    @WithMockUser(username = "organizador@test.com", roles = {"USER"})
+    @DisplayName("DELETE /api/eventos/{id}/participantes/{participanteId} - participante não encontrado")
+    void testRemoveParticipante_NotFound() throws Exception {
+        Mockito.doThrow(new EntityNotFoundException("Participante não encontrado"))
+                .when(eventoService).removeParticipante(1, 200, "organizador@test.com");
+
+        mockMvc.perform(delete("/api/eventos/1/participantes/200")
+                        .with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Participante não encontrado"));
+    }
+
+    @Test
+    @WithMockUser(username = "organizador@test.com", roles = {"USER"})
+    @DisplayName("DELETE /api/eventos/{id}/participantes/{participanteId} - erro de regra de negócio")
+    void testRemoveParticipante_BadRequest() throws Exception {
+        Mockito.doThrow(new IllegalArgumentException("Participante não pertence ao evento"))
+                .when(eventoService).removeParticipante(3, 100, "organizador@test.com");
+
+        mockMvc.perform(delete("/api/eventos/3/participantes/100")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Participante não pertence ao evento"));
     }
 }
