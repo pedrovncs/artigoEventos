@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.infnet</groupId>
 	<artifactId>artigoEventos</artifactId>
-	<version>v0.0.1-SNAPSHOT</version>
+    <version>0.0.0-SNAPSHOT</version>
 	<name>artigoEventos</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>

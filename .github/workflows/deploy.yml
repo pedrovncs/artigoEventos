@@ -3,12 +3,19 @@ name: deploy
 on:
   schedule:
     - cron: '33 3 * * 1-5'
+
   workflow_dispatch:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "feature/deploy-config" ]
 
 jobs:
 
   build-push:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,8 +32,27 @@ jobs:
       - name: permissão para executar mvn
         run: chmod +x mvnw
 
+      - name: calcular nova versão
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "major:"
+          minor_pattern: "feat:"
+          version_format: "${major}.${minor}.${patch}"
+
+      - name: atualizar pom.xml
+        run: |
+          ./mvnw versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
+
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
+
+      - name: criar tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
 
       - name: login no docker hub
         uses: docker/login-action@v3
@@ -41,9 +67,10 @@ jobs:
           push: true
           tags: | 
             ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{github.sha}}
+            ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{steps.version.outputs.version }}
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build-push
     runs-on: ubuntu-latest
     steps:
