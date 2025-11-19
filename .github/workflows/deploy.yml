@@ -129,11 +129,12 @@ jobs:
         with:
           args: |
             **📢 Workflow de deploy acabou de rodar**
-            **Branch: ** `${{github.ref}}`
+            branch: `${{github.ref}}`
             
             **📦 versão:** `${{ needs.build-push.outputs.version || 'N/A' }}`
+            
             jobs:
             **➡️ build-push-release:** ${{ needs.build-push-release.result }}
             **➡️ deploy:** ${{ needs.deploy.result }}
             
-            🔗 [Verificar execução](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            🔗 [verificar execução](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
