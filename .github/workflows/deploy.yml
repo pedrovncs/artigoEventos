@@ -3,6 +3,8 @@ name: deploy
 on:
   schedule:
     - cron: '33 3 * * 1-5'
+
+      #REMOVER PARA MERGE MAIN
   workflow_dispatch:
   pull_request:
     branches: [ "main" ]
@@ -48,7 +50,7 @@ jobs:
         run: ./mvnw clean package -DskipTests
 
       - name: criar tag
-        #if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: |
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
@@ -69,7 +71,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/artigo-eventos:${{steps.version.outputs.version }}
 
   deploy:
-    #if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     needs: build-push
     runs-on: ubuntu-latest
     steps:
