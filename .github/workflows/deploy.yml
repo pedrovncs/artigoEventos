@@ -39,16 +39,19 @@ jobs:
           version_format: "${major}.${minor}.${patch}"
 
       - name: atualizar pom.xml
+        if: github.ref == 'refs/heads/main'
         run: |
           ./mvnw versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
 
       - name: commit novo pom.xml
+        if: github.ref == 'refs/heads/main'
         uses: stefanzweifel/git-auto-commit-action@v7.0.0
         with:
           commit_message: 'chore: nova versão - ${{ steps.version.outputs.version }} [skip ci]'
           file_pattern: 'pom.xml'
 
       - name: Create Tag
+        if: github.ref == 'refs/heads/main'
         run: |
           git tag v${{ steps.version.outputs.version }}
           git push origin v${{ steps.version.outputs.version }}
