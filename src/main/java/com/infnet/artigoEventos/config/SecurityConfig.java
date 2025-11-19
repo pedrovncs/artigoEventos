@@ -26,7 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/usuarios/signup").permitAll()
                         .requestMatchers("/api/swagger-ui/**").permitAll()
                         .requestMatchers("/api/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/teste").permitAll()
+                        .requestMatchers("/api/teste/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/eventos").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/eventos/**").permitAll()

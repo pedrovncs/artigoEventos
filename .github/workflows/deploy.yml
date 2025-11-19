@@ -45,6 +45,18 @@ jobs:
         run: |
           ./mvnw versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
 
+      - name: gerar pagina html
+        run: |
+          mkdir -p src/main/resources/static
+          echo "<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><h1>Versão: ${{ steps.version.outputs.version }}</h1><h2>Data de deploy: $(TZ='America/Sao_Paulo' date +'%d/%m/%Y às %H:%M:%S')</h2></body></html>" > src/main/resources/static/deploy.html
+
+      - name: upload html para debug
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy.html
+          path: src/main/resources/static/deploy.html
+
       - name: Build with Maven
         run: ./mvnw clean package -DskipTests
 
