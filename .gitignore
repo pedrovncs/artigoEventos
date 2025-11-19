@@ -3,7 +3,6 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-uploads-test
 
 ### STS ###
 .apt_generated
@@ -35,4 +34,5 @@ build/
 
 *.db
 uploads
+/uploads-test/
 src/main/resources/static/deploy.html
