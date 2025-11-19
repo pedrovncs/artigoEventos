@@ -45,7 +45,7 @@ jobs:
       - name: commit novo pom.xml
         uses: stefanzweifel/git-auto-commit-action@v7.0.0
         with:
-          commit_message: 'chore: nova versao - ${{ steps.semver.outputs.version }} [skip ci]'
+          commit_message: 'chore: nova versão - ${{ steps.version.outputs.version }} [skip ci]'
           file_pattern: 'pom.xml'
 
       - name: Create Tag
