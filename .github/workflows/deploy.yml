@@ -26,8 +26,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      #- name: permissão para executar mvn
-        #run: chmod +x mvnw
+      - name: permissão para executar mvn
+        run: chmod +x mvnw
 
       - name: calcular nova versão
         id: version
