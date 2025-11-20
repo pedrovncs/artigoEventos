@@ -6,221 +6,354 @@ import com.infnet.artigoEventos.dto.EventoUpdateDto;
 import com.infnet.artigoEventos.dto.ParticipanteDto;
 import com.infnet.artigoEventos.model.Evento;
 import com.infnet.artigoEventos.model.Participante;
+import com.infnet.artigoEventos.model.StatusEvento;
 import com.infnet.artigoEventos.service.EventoService;
 import jakarta.persistence.EntityNotFoundException;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-
-import org.hibernate.annotations.Comment;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/*
-    Teste de Integração para o EventoController.
-    @WebMvcTest APENAS para a camada web (o controller).
-    O EventoService mockado para isolar os testes do controller.
-*/
-
-/*  
-    Informa ao Spring para testar APENAS este controller.
-    Simula um usuário logado para todos os testes.
-    Ferramenta para converter objetos Java <-> JSON
-*/
 @WebMvcTest(EventoController.class)
-@WithMockUser(roles = "ADMIN")
-public class EventoControllerTest {
+class EventoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper; // 
+        @MockitoBean
+        private EventoService eventoService;
 
-    @MockBean
-    private EventoService eventoService;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    /*  
-    *   Teste para o endpoint GET /api/eventos
-    *  Verifica se o status é 200 OK e se o tamanho da lista retornada é 2.
-    */
-    @Test
-    @Comment("Teste para o endpoint GET /api/eventos para listar todos os eventos")  
-    public void testGetAllEventos() throws Exception {
-        when(eventoService.getAllEventos()).thenReturn(List.of(new Evento(), new Evento()));
+        @Test
+        @WithMockUser
+        @DisplayName("GET /api/eventos - deve retornar lista de eventos")
+        void testGetAllEventos() throws Exception {
+                Evento e = new Evento();
+                e.setId(1);
+                e.setNome("Teste");
 
-        mockMvc.perform(get("/api/eventos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(2));
-    }
+                Mockito.when(eventoService.getAllEventos()).thenReturn(List.of(e));
 
-    /*  
-      *   Teste para o endpoint GET /api/eventos/{id}
-      *  Verifica se o status é 200 OK e se o evento retornado tem os valores esperados.
-    */
-    @Test
-    @Comment("Teste para o endpoint GET /api/eventos/{id} para obter um evento por ID")
-    public void testGetEventoById_Success() throws Exception {
-        Evento mockEvento = new Evento();
-        mockEvento.setId(1);
-        mockEvento.setNome("Evento de Teste");
-        when(eventoService.getEventoById(1)).thenReturn(mockEvento);
+                mockMvc.perform(get("/api/eventos"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].nome").value("Teste"));
+        }
 
-        mockMvc.perform(get("/api/eventos/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nome").value("Evento de Teste"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("GET /api/eventos/{id} - sucesso")
+        void testGetEventoById_Success() throws Exception {
+                Evento evento = new Evento();
+                evento.setId(1);
+                evento.setNome("Evento OK");
 
-    /*  
-      *   Teste para o endpoint GET /api/eventos/{id}
-      *  Verifica se o status é 404 NOT_FOUND e se a mensagem de erro está correta.
-    */
-    @Test
-    @Comment("Teste para o endpoint GET /api/eventos/{id} quando o evento não é encontrado")
-    public void testGetEventoById_NotFound() throws Exception {
+                Mockito.when(eventoService.getEventoById(1)).thenReturn(evento);
 
-        when(eventoService.getEventoById(99)).thenThrow(new EntityNotFoundException("Evento 99 não encontrado"));
+                mockMvc.perform(get("/api/eventos/1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nome").value("Evento OK"));
+        }
 
-        mockMvc.perform(get("/api/eventos/99"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$").value("Evento 99 não encontrado"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("GET /api/eventos/{id} - evento não encontrado")
+        void testGetEventoById_NotFound() throws Exception {
+                Mockito.when(eventoService.getEventoById(99))
+                                .thenThrow(new EntityNotFoundException("Evento nao encontrado"));
 
-    /*  
-      *   Teste para o endpoint POST /api/eventos
-      *  Verifica se o status é 201 CREATED e se o evento retornado tem os valores esperados.
-    */
-    @Test
-    @Comment("Teste para o endpoint POST /api/eventos para criar um novo evento")
-    @WithMockUser(roles = "ADMIN") // Garante a permissão
-    public void testCreateEvento() throws Exception {
-        // 1. O DTO (JSON) que será enviado
-        EventoCreateDto dto = new EventoCreateDto();
-        dto.setNome("Novo Evento");
-        
-        dto.setDataEvento(LocalDateTime.now().plusDays(1)); // @FutureOrPresent
-        dto.setLocalEvento("Local de Teste");               // @NotBlank
-        dto.setOrganizadorId(1);                            // @NotNull
+                mockMvc.perform(get("/api/eventos/99"))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Evento nao encontrado"));
+        }
 
-        String dtoAsJson = objectMapper.writeValueAsString(dto);
+        @Test
+        @WithMockUser(username = "email@teste.com", roles = { "USER" })
+        @DisplayName("POST /api/eventos - criar evento com sucesso")
+        void testCreateEvento_Success() throws Exception {
+                EventoCreateDto dto = new EventoCreateDto();
+                dto.setNome("Novo Evento");
+                dto.setLocalEvento("SP");
+                dto.setDescricao("Teste");
+                dto.setDataEvento(LocalDateTime.now().plusDays(1));
 
-        // 2. O arquivo de imagem (MultipartFile)
-        MockMultipartFile imagem = new MockMultipartFile(
-                "imagem", 
-                "imagem-teste.jpg",
-                MediaType.IMAGE_JPEG_VALUE,
-                "conteudo-da-imagem".getBytes()
-        );
+                MockMultipartFile dtoPart = new MockMultipartFile(
+                                "evento", "", "application/json", objectMapper.writeValueAsBytes(dto));
 
-        // 3. O JSON (como MultipartFile)
-        MockMultipartFile eventoJsonPart = new MockMultipartFile(
-                "evento",
-                "", 
-                MediaType.APPLICATION_JSON_VALUE,
-                dtoAsJson.getBytes(StandardCharsets.UTF_8)
-        );
+                MockMultipartFile imagem = new MockMultipartFile(
+                                "imagem", "foto.png", "image/png", "fake-image".getBytes());
 
-        // 4. O objeto que o service "mockado" deve retornar
-        Evento eventoSalvo = new Evento();
-        eventoSalvo.setId(1);
-        eventoSalvo.setNome("Novo Evento");
-        when(eventoService.createEvento(any(EventoCreateDto.class), any(MultipartFile.class)))
-                .thenReturn(eventoSalvo);
+                Evento salvo = new Evento();
+                salvo.setId(10);
+                salvo.setNome("Novo Evento");
 
-        // 5. Executa o teste
-        mockMvc.perform(multipart("/api/eventos") 
-                        .file(imagem)
-                        .file(eventoJsonPart) 
-                        .with(csrf())) // CSRF
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nome").value("Novo Evento"));
-    }
+                Mockito.when(eventoService.createEvento(any(), any(), eq("email@teste.com")))
+                                .thenReturn(salvo);
 
-    /* 
-     *  Teste para o endpoint PUT /api/eventos/{id}
-     *  Verifica se o status é 200 OK e se o evento retornado tem os valores esperados.
-    */
-    @Test
-    @Comment("Teste para o endpoint PUT /api/eventos/{id} para atualizar um evento existente")
-    public void testUpdateEvento() throws Exception {
-        EventoUpdateDto dto = new EventoUpdateDto();
-        dto.setNome("Nome Atualizado");
-        String dtoAsJson = objectMapper.writeValueAsString(dto);
+                mockMvc.perform(multipart("/api/eventos")
+                                .file(dtoPart)
+                                .file(imagem)
+                                .with(csrf()))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(10))
+                                .andExpect(jsonPath("$.nome").value("Novo Evento"));
+        }
 
-        Evento eventoAtualizado = new Evento();
-        eventoAtualizado.setId(1);
-        eventoAtualizado.setNome("Nome Atualizado");
+        @Test
+        @WithMockUser(username = "naoexiste@x.com", roles = { "USER" })
+        @DisplayName("POST /api/eventos - organizador não encontrado")
+        void testCreateEvento_OrganizadorNotFound() throws Exception {
+                EventoCreateDto dto = new EventoCreateDto();
+                dto.setNome("Evento X");
+                dto.setLocalEvento("RJ");
+                dto.setDescricao("Teste");
+                dto.setDataEvento(LocalDateTime.now().plusDays(1));
 
-        when(eventoService.updateEvento(eq(1), any(EventoUpdateDto.class))).thenReturn(eventoAtualizado);
+                MockMultipartFile dtoPart = new MockMultipartFile(
+                                "evento", "", "application/json", objectMapper.writeValueAsBytes(dto));
 
-        mockMvc.perform(put("/api/eventos/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(csrf())
-                        .content(dtoAsJson))
+                Mockito.when(eventoService.createEvento(any(), any(), eq("naoexiste@x.com")))
+                                .thenThrow(new EntityNotFoundException("Usuario Organizador nao encotrado"));
 
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nome").value("Nome Atualizado"));
-    }
+                mockMvc.perform(multipart("/api/eventos")
+                                .file(dtoPart)
+                                .with(csrf()))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Usuario Organizador nao encotrado"));
+        }
 
-    /* 
-     *  Teste para o endpoint DELETE /api/eventos/{id}
-     * Verifica se o status é 204 NO_CONTENT.
-     */
-    @Test
-    @Comment("Teste para o endpoint DELETE /api/eventos/{id} para deletar um evento")
-    public void testDeleteEvento() throws Exception {
-        doNothing().when(eventoService).deleteEvento(1);
+        @Test
+        @WithMockUser
+        @DisplayName("PUT /api/eventos/{id} - atualizar evento com sucesso")
+        void testUpdateEvento_Success() throws Exception {
+                EventoUpdateDto dto = new EventoUpdateDto();
+                dto.setNome("Editado");
+                dto.setStatus(StatusEvento.ATIVO);
 
-        mockMvc.perform(delete("/api/eventos/1").with(csrf()))
-                .andExpect(status().isNoContent()); 
-    }
+                Evento atualizado = new Evento();
+                atualizado.setId(1);
+                atualizado.setNome("Editado");
 
-    /* 
-     *  Teste para o endpoint POST /api/eventos/{id}/participantes
-     *  Verifica se o status é 201 CREATED e se o participante retornado tem os valores esperados.
-    */
-    @Test
-    @Comment("Teste para o endpoint POST /api/eventos/{id}/participantes para adicionar um participante")
-    @WithMockUser(roles = "ADMIN")
-    public void testAddParticipante() throws Exception {
-        ParticipanteDto dto = new ParticipanteDto();
-        dto.setEmail("teste@email.com");
-        dto.setNome("Nome do Participante"); // @NotBlank
+                Mockito.when(eventoService.updateEvento(eq(1), any())).thenReturn(atualizado);
 
-        String dtoAsJson = objectMapper.writeValueAsString(dto);
+                mockMvc.perform(put("/api/eventos/1")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.nome").value("Editado"));
+        }
 
-        Participante participanteSalvo = new Participante();
-        participanteSalvo.setId(1);
-        participanteSalvo.setEmail("teste@email.com");
+        @Test
+        @WithMockUser
+        @DisplayName("PUT /api/eventos/{id} - evento não encontrado")
+        void testUpdateEvento_NotFound() throws Exception {
+                Mockito.when(eventoService.updateEvento(eq(99), any()))
+                                .thenThrow(new EntityNotFoundException("Evento não existe"));
 
-        when(eventoService.addParticipante(eq(1), any(ParticipanteDto.class))).thenReturn(participanteSalvo);
+                mockMvc.perform(put("/api/eventos/99")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nome\":\"x\"}"))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Evento não existe"));
+        }
 
-        mockMvc.perform(post("/api/eventos/1/participantes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(csrf()) 
-                        .content(dtoAsJson))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.email").value("teste@email.com"));
-    }
+        @Test
+        @WithMockUser
+        @DisplayName("PUT /api/eventos/{id}/imagem - atualizar imagem do evento")
+        void testUpdateEventoImagem_Success() throws Exception {
+                MockMultipartFile file = new MockMultipartFile(
+                                "imagem", "foto.png", "image/png", "img".getBytes());
+
+                Evento evento = new Evento();
+                evento.setId(1);
+
+                Mockito.when(eventoService.updateEventoImagem(eq(1), any())).thenReturn(evento);
+
+                mockMvc.perform(multipart("/api/eventos/1/imagem")
+                                .file(file)
+                                .with(request -> {
+                                        request.setMethod("PUT");
+                                        return request;
+                                })
+                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("DELETE /api/eventos/{id} - deletar evento com sucesso")
+        void testDeleteEvento_Success() throws Exception {
+                mockMvc.perform(delete("/api/eventos/1")
+                                .with(csrf()))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("POST /api/eventos/{id}/participantes - adicionar participante")
+        void testAddParticipante_Success() throws Exception {
+                ParticipanteDto dto = new ParticipanteDto();
+                dto.setNome("João");
+                dto.setEmail("joao@test.com");
+
+                Participante participante = new Participante();
+                participante.setId(1);
+
+                Mockito.when(eventoService.addParticipante(eq(5), any(), eq("organizador@test.com")))
+                                .thenReturn(participante);
+
+                mockMvc.perform(post("/api/eventos/5/participantes")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(1));
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("DELETE /api/eventos/{id}/participantes/{participanteId} - remover participante")
+        void testRemoveParticipante_Success() throws Exception {
+                mockMvc.perform(delete("/api/eventos/3/participantes/20")
+                                .with(csrf()))
+                                .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("PUT /api/eventos/{id}/imagem - evento não encontrado")
+        void testUpdateEventoImagem_NotFound() throws Exception {
+                MockMultipartFile file = new MockMultipartFile(
+                                "imagem", "foto.png", "image/png", "img".getBytes());
+
+                Mockito.when(eventoService.updateEventoImagem(eq(99), any()))
+                                .thenThrow(new EntityNotFoundException("Imagem não encontrada"));
+
+                mockMvc.perform(multipart("/api/eventos/99/imagem")
+                                .file(file)
+                                .with(request -> {
+                                        request.setMethod("PUT");
+                                        return request;
+                                })
+                                .with(csrf()))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Imagem não encontrada"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("PUT /api/eventos/{id}/imagem - erro ao processar imagem")
+        void testUpdateEventoImagem_IOException() throws Exception {
+                MockMultipartFile file = new MockMultipartFile(
+                                "imagem", "foto.png", "image/png", "img".getBytes());
+
+                Mockito.when(eventoService.updateEventoImagem(eq(1), any()))
+                                .thenThrow(new IOException("Erro ao salvar imagem"));
+
+                mockMvc.perform(multipart("/api/eventos/1/imagem")
+                                .file(file)
+                                .with(request -> {
+                                        request.setMethod("PUT");
+                                        return request;
+                                })
+                                .with(csrf()))
+                                .andExpect(status().isInternalServerError())
+                                .andExpect(content().string("Erro processando a imagem"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("DELETE /api/eventos/{id} - evento não encontrado")
+        void testDeleteEvento_NotFound() throws Exception {
+                Mockito.doThrow(new EntityNotFoundException("Evento não existe"))
+                                .when(eventoService).deleteEvento(99);
+
+                mockMvc.perform(delete("/api/eventos/99")
+                                .with(csrf()))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Evento não existe"));
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("POST /api/eventos/{id}/participantes - evento não encontrado")
+        void testAddParticipante_EventoNotFound() throws Exception {
+                ParticipanteDto dto = new ParticipanteDto();
+                dto.setNome("João");
+                dto.setEmail("joao@test.com");
+
+                Mockito.when(eventoService.addParticipante(eq(20), any(), eq("organizador@test.com")))
+                                .thenThrow(new EntityNotFoundException("Evento não encontrado"));
+
+                mockMvc.perform(post("/api/eventos/20/participantes")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Evento não encontrado"));
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("POST /api/eventos/{id}/participantes - erro de regra de negócio")
+        void testAddParticipante_BadRequest() throws Exception {
+                ParticipanteDto dto = new ParticipanteDto();
+                dto.setNome("João");
+                dto.setEmail("joao@test.com");
+
+                Mockito.when(eventoService.addParticipante(eq(10), any(), eq("organizador@test.com")))
+                                .thenThrow(new IllegalArgumentException("Participante já inscrito"));
+
+                mockMvc.perform(post("/api/eventos/10/participantes")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string("Participante já inscrito"));
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("DELETE /api/eventos/{id}/participantes/{participanteId} - participante não encontrado")
+        void testRemoveParticipante_NotFound() throws Exception {
+                Mockito.doThrow(new EntityNotFoundException("Participante não encontrado"))
+                                .when(eventoService).removeParticipante(1, 200, "organizador@test.com");
+
+                mockMvc.perform(delete("/api/eventos/1/participantes/200")
+                                .with(csrf()))
+                                .andExpect(status().isNotFound())
+                                .andExpect(content().string("Participante não encontrado"));
+        }
+
+        @Test
+        @WithMockUser(username = "organizador@test.com", roles = { "USER" })
+        @DisplayName("DELETE /api/eventos/{id}/participantes/{participanteId} - erro de regra de negócio")
+        void testRemoveParticipante_BadRequest() throws Exception {
+                Mockito.doThrow(new IllegalArgumentException("Participante não pertence ao evento"))
+                                .when(eventoService).removeParticipante(3, 100, "organizador@test.com");
+
+                mockMvc.perform(delete("/api/eventos/3/participantes/100")
+                                .with(csrf()))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(content().string("Participante não pertence ao evento"));
+        }
 }

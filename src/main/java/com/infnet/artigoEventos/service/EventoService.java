@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
+
 @Service
 public class EventoService {
 
@@ -37,7 +38,8 @@ public class EventoService {
     public EventoService(@Value("${file.upload-dir}") String uploadDir) {
         this.rootLocation = Paths.get(uploadDir);
     }
-
+ //
+    //
     @PostConstruct
     public void init() {
         try {
@@ -83,9 +85,9 @@ public class EventoService {
                 .orElseThrow(() -> new EntityNotFoundException("Evento nao encontrado com id: " + id));
     }
 
-    public Evento createEvento(EventoCreateDto dto, MultipartFile imagem) throws IOException {
-        Usuario organizador = usuarioRepository.findById(dto.getOrganizadorId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuario Organizador nao encotrado com id: " + dto.getOrganizadorId()));
+    public Evento createEvento(EventoCreateDto dto, MultipartFile imagem, String organizadorEmail) throws IOException {
+        Usuario organizador = usuarioRepository.findByEmail(organizadorEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario Organizador nao encotrado com email: " + organizadorEmail));
 
         Evento evento = new Evento();
         evento.setNome(dto.getNome());
@@ -102,8 +104,16 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
-    public Participante addParticipante(Integer eventoId, ParticipanteDto dto) {
+    public Participante addParticipante(Integer eventoId, ParticipanteDto dto, String requisitanteEmail) {
         Evento evento = getEventoById(eventoId);
+
+        Usuario requisitante = usuarioRepository.findByEmail(requisitanteEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário requisitante não encontrado"));
+
+        if (!evento.getOrganizador().getId().equals(requisitante.getId())) {
+            throw new SecurityException("Apenas o organizador do evento pode adicionar participantes.");
+        }
+
         if (participanteRepository.existsByEmailAndEvento(dto.getEmail(), evento)) {
             throw new IllegalArgumentException("Este email ja esta convidado para o evento");
         }
@@ -161,16 +171,22 @@ public class EventoService {
         return Files.readAllBytes(file);
     }
 
-    public void removeParticipante(Integer eventoId, Integer participanteId) {
+    public void removeParticipante(Integer eventoId, Integer participanteId, String requisitanteEmail) {
         Evento evento = getEventoById(eventoId);
 
+        Usuario requisitante = usuarioRepository.findByEmail(requisitanteEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário requisitante não encontrado"));
+
+        if (!evento.getOrganizador().getId().equals(requisitante.getId())) {
+            throw new SecurityException("Apenas o organizador do evento pode remover participantes.");
+        }
+
         Participante participante = participanteRepository.findById(participanteId)
-                .orElseThrow(() -> new EntityNotFoundException("Participante nao encontrado comid" + participanteId));
+                .orElseThrow(() -> new EntityNotFoundException("Participante nao encontrado com id" + participanteId));
 
         if (!participante.getEvento().getId().equals(evento.getId())) {
             throw new IllegalArgumentException("Participante nao convidado para este evento");
         }
-
         participanteRepository.delete(participante);
     }
 }

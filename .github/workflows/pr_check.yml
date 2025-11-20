@@ -1,0 +1,68 @@
+name: ci-pr-check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      checks: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build, Test e Jacoco Report
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -q clean verify
+
+      - name: JaCoCo Report to PR
+        id: jacoco
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.2
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-changed-files: 40
+          min-coverage-overall: 80
+          update-comment: true
+          title: '🍌Cobertura Jacoco nos arquivos modificados no PR'
+
+      - name: falha PR se cobertura estiver abaixo 80%
+        if: ${{ steps.jacoco.outputs.coverage-overall < 80.0 && github.event_name == 'pull_request'}}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.setFailed('Cobertura de testes total abaixo de 80%!')
+
+      - name: Upload Jacoco Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report-html
+          path: target/site/jacoco/
