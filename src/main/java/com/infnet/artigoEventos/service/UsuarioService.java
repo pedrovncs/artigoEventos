@@ -20,8 +20,8 @@ public class UsuarioService implements UserDetailsService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    //@Autowired
+    //private PasswordEncoder passwordEncoder;
 
     public Usuario signup(UsuarioDto usuarioDto) {
         if (usuarioRepository.findByEmail(usuarioDto.getEmail()).isPresent()) {
