@@ -56,12 +56,17 @@ public class EventoService {
         }
 
         String originalFilename = Paths.get(Objects.requireNonNull(file.getOriginalFilename())).getFileName().toString();
+        // Validate that the filename does not contain suspicious patterns
+        if (originalFilename.contains("..") || originalFilename.contains("/") || originalFilename.contains("\\") ||
+            originalFilename.trim().isEmpty()) {
+            throw new SecurityException("Nome de arquivo inválido: " + originalFilename);
+        }
 
         String filename = UUID.randomUUID() + "_" + originalFilename;
 
         Path destinationFile = this.rootLocation.resolve(filename).normalize().toAbsolutePath();
-
-        if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
+        // Ensure the destination file is still within the intended root location
+        if (!destinationFile.startsWith(this.rootLocation.toAbsolutePath())) {
             throw new SecurityException("Caminho de arquivo inválido: " + originalFilename);
         }
 
