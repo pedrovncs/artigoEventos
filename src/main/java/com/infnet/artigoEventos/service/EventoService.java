@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -53,10 +54,21 @@ public class EventoService {
         if (file.isEmpty()) {
             return null;
         }
-        String originalFilename = file.getOriginalFilename();
-        String filename = UUID.randomUUID().toString() + "_" + originalFilename;
 
-        Path destinationFile = this.rootLocation.resolve(filename).toAbsolutePath();
+        String originalFilename = Paths.get(Objects.requireNonNull(file.getOriginalFilename())).getFileName().toString();
+        // Validate that the filename does not contain suspicious patterns
+        if (originalFilename.contains("..") || originalFilename.contains("/") || originalFilename.contains("\\") ||
+            originalFilename.trim().isEmpty()) {
+            throw new SecurityException("Nome de arquivo inválido: " + originalFilename);
+        }
+
+        String filename = UUID.randomUUID() + "_" + originalFilename;
+
+        Path destinationFile = this.rootLocation.resolve(filename).normalize().toAbsolutePath();
+        // Ensure the destination file is still within the intended root location
+        if (!destinationFile.startsWith(this.rootLocation.toAbsolutePath())) {
+            throw new SecurityException("Caminho de arquivo inválido: " + originalFilename);
+        }
 
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
