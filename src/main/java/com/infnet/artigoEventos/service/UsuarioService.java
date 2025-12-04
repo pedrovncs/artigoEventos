@@ -79,4 +79,9 @@ public class UsuarioService implements UserDetailsService {
                 new ArrayList<>()
         );
     }
+
+    //metodo adicionado para pull request da apresentacao apresentacao
+    public void doNothing(){
+        System.out.println("fazendo nada");
+    }
 }

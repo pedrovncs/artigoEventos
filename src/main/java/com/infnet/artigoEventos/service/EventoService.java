@@ -39,8 +39,7 @@ public class EventoService {
     public EventoService(@Value("${file.upload-dir}") String uploadDir) {
         this.rootLocation = Paths.get(uploadDir);
     }
- //
-    //
+
     @PostConstruct
     public void init() {
         try {
@@ -200,5 +199,9 @@ public class EventoService {
             throw new IllegalArgumentException("Participante nao convidado para este evento");
         }
         participanteRepository.delete(participante);
+    }
+    //metodo adicionado para pull request da apresentacao apresentacao
+    public void doNothing(){
+        System.out.println("fazendo nada");
     }
 }
