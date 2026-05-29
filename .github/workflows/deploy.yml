@@ -109,7 +109,7 @@ jobs:
             
             docker run -d \
               --name artigo-eventos \
-              -p 80:8080 \
+              -p 127.0.0.1:8080:8080 \
               -v /home/${{ secrets.VM_USERNAME }}/app-data:/app/data \
               -e SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/eventos.db \
               -e FILE_UPLOAD_DIR=/app/data/uploads \
